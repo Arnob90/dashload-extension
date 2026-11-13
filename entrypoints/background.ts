@@ -3,6 +3,7 @@ interface RequestHeaders {
     user_agent: string | null;
     referrer: string | null;
 }
+
 interface ExternalDownloadRequest {
     url: string;
     filename?: string;
@@ -14,6 +15,14 @@ export default defineBackground(() => {
     browser.downloads.onCreated.addListener(async (downloadItem) => {
         // 1. Ignore downloads initiated by our own extension/data URLs
         if (downloadItem.url.startsWith("data:") || downloadItem.url.startsWith("blob:")) {
+            return;
+        }
+
+        // 1b. Honor the monitoring toggle persisted by the popup.
+        const { dashload_monitoring: monitoring = true } = await browser.storage.local.get(
+            "dashload_monitoring"
+        );
+        if (!monitoring) {
             return;
         }
 
@@ -60,6 +69,19 @@ export default defineBackground(() => {
             console.error("Failed to forward download to Dashload desktop app:", err);
             // Optional: If desktop app is not running, let the browser download it normally
         }
+
+        // 6. Notify the popup so it can show the most recent forward
+        try {
+            browser.runtime.sendMessage({
+                type: "dashload_forwarded",
+                url: payload.url,
+                filename: payload.filename,
+                filesize: payload.filesize,
+            });
+        } catch (e) {
+            // Popup may be closed; that's fine.
+        }
+
         console.log("Download request forwarded to Dashload desktop app:", payload);
     });
 });
