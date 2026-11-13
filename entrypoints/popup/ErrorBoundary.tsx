@@ -19,6 +19,10 @@ class ErrorBoundary extends React.Component<Props, State> {
         return { hasError: true, error };
     }
 
+    override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error('[Dashload] ErrorBoundary caught:', error, errorInfo.componentStack);
+    }
+
     override render() {
         if (this.state.hasError) {
             return (
@@ -30,7 +34,7 @@ class ErrorBoundary extends React.Component<Props, State> {
                     )}
                     <button
                         className="retry-btn"
-                        onClick={() => this.setState({ hasError: false })}
+                        onClick={() => window.location.reload()}
                     >
                         Reload App
                     </button>
