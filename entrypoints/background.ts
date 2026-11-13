@@ -70,17 +70,17 @@ export default defineBackground(() => {
             // Optional: If desktop app is not running, let the browser download it normally
         }
 
-        // 6. Notify the popup so it can show the most recent forward
-        try {
-            browser.runtime.sendMessage({
+        // 6. Notify the popup so it can show the most recent forward.
+        // Fire-and-forget: if no page is listening (popup closed), the
+        // promise rejects; swallow it so it doesn't crash the service worker.
+        browser.runtime
+            .sendMessage({
                 type: "dashload_forwarded",
                 url: payload.url,
                 filename: payload.filename,
                 filesize: payload.filesize,
-            });
-        } catch (e) {
-            // Popup may be closed; that's fine.
-        }
+            })
+            .catch(() => {});
 
         console.log("Download request forwarded to Dashload desktop app:", payload);
     });
